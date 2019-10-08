@@ -22,12 +22,6 @@ info:
 # API SERVERS
 # -------------------------------------------------------- # 
 servers: 
-# Added by API Auto Mocking Plugin
-# Added by API Auto Mocking Plugin
-- description: SwaggerHub API Auto Mocking
-  url: https://virtserver.swaggerhub.com/codas7/CODAS7_PublicAPI/1
-- description: SwaggerHub API Auto Mocking
-  url: https://virtserver.swaggerhub.com/codas7/Codas7a/1
 - url: https://sandbox.dev.codas.com/api/v1
   description: Sandbox API Server
 # -------------------------------------------------------- #   
