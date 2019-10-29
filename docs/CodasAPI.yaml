@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  version: "2.9" # 21/10/2019
+  version: "2.11" # 29/10/2019
   title: 'Codas Public API'
   description: 'An API that provides Public/Third Party access to customer specific information such as pricing and transactional data for registered Codas Online customers. Provides access to reference data and ability to update customer details and create new sales orders. This API requires a valid CDS CODAS license.  
 <br><br> Version 2.0 - 05/08/2019  - Addition of purchase order entity
@@ -12,7 +12,9 @@ info:
 <br>Version 2.6 - 04/10/2019  - Added the sandbox server address (https://sandbox.dev.codas.com/api/v1)
 <br>Version 2.7 - 08/10/2019  - Added ability to request a sales order by ticket number
 <br>Version 2.8 - 09/10/2019  - Restructured the contact object to contain Marketing Preferences list instead of defined properties
-<br>Version 2.9 - 21/10/2019  - Adapted "Next" property references to provide example uri'
+<br>Version 2.9 - 21/10/2019  - Adapted "Next" property references to provide example uri
+<br>Version 2.10 - 28/10/2019 - Added TelNo2 property to the contact schema
+<br>Version 2.11 - 29/10/2019 - Added extra properties to the sales-order schema'
   termsOfService: https://www.codas.com/privacy-policy
   contact:
     name: Support
@@ -983,6 +985,11 @@ components:
           description: Order depot
           example: '100'
           maxLength: 3
+        AddressPostcode:
+          type: string
+          description: Delivery address postcode
+          example: 'M5 4TP'
+          maxLength: 10
         TotValIncVAT:
           type: number
           description: Order total value including VAT
@@ -995,6 +1002,11 @@ components:
           type: string
           description: Status Description (ignored in Post)
           example: 'Confirmed'
+        WindowsLoad:
+          type: string
+          description: Load row id. Empty string unless the order is on a load
+          example: '0000001234'
+          maxLength: 10
         OrderLines:  
           type: array
           description: Array of order lines
@@ -1472,6 +1484,11 @@ components:
         TelNo: 
           type: string
           description: Associate Telephone Number
+          maxLength: 20
+          example: '01618329251'
+        TelNo2: 
+          type: string
+          description: Second Associate Telephone Number
           maxLength: 20
           example: '01618329251'
         MobileNo:
