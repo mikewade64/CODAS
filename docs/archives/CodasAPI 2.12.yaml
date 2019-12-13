@@ -983,12 +983,12 @@ components:
           maxLength: 10
         IntendedDeliveryDate:
           type: string
-          description: Earliest delivery date (YYYY-MM-DD)
+          description: Earliest delivery date (YYYY-MM-DD or null)
           example: '2019-07-24'
           maxLength: 10
         LatestDeliveryDate:
           type: string
-          description: Latest delivery date (YYYY-MM-DD)
+          description: Latest delivery date (YYYY-MM-DD or null)
           example: '2019-07-27'
           maxLength: 10
         DeliveryDate:
