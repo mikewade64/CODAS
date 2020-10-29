@@ -1,9 +1,10 @@
 openapi: 3.0.0
 info:
-  version: "2.12" # 13/12/2019
+  version: "2.18" # 23/10/2020
   title: 'Codas Public  - Condensed'
   description: 'An API that provides Public/Third Party access to customer specific information such as pricing and transactional data for registered Codas Online customers. Provides access to reference data and ability to update customer details and create new sales orders. This API requires a valid CDS CODAS license.  
-<br><br> Version 2.0 - 05/08/2019  - Addition of purchase order entity
+<br>
+<br> Version 2.0 - 05/08/2019  - Initial documentation creation
 <br>Version 2.1 - 12/08/2019  - Restructured endpoints, requests and responses
 <br>Version 2.2 - 23/08/2019  - Removed Prefixes and changed the naming convention of scopes
 <br>Version 2.3 - 06/09/2019  - Changed underscores to hypens in endpoints and changed parameter names to camel case
@@ -15,7 +16,13 @@ info:
 <br>Version 2.9 - 21/10/2019  - Adapted "Next" property references to provide example uri
 <br>Version 2.10 - 28/10/2019 - Added TelNo2 property to the contact schema
 <br>Version 2.11 - 29/10/2019 - Added extra properties to the sales-order schema
-<br>Version 2.12 - 13/12/2019 - Added extra properties to the sales-order schema'
+<br>Version 2.12 - 13/12/2019 - Added extra properties to the sales-order schema
+<br>Version 2.13 - 06/10/2020 - Added customers endpoint and sales-payments endpoint
+<br>Version 2.14 - 16/10/2020 - Update details for authenticating personal details
+<br>Version 2.15 - 19/10/2020 - Add include query parameter on the customer endpoint
+<br>Version 2.16 - 20/10/2020 - Change access_token header to Access-Key
+<br>Version 2.17 - 22/10/2020 - Add include query parameter to PATCH customer endpoint
+<br>Version 2.18 - 23/10/2020 - Fix JSON Patch example spelling'
   termsOfService: https://www.codas.com/privacy-policy
   contact:
     name: Support
@@ -24,7 +31,7 @@ info:
   license:
     name: CDS Computer Design Systems Ltd.
     url: https://www.codas.com
-# -------------------------------------------------------- # 
+# -------------------------------------------------------- #
 # API SERVERS
 # -------------------------------------------------------- # 
 servers: 
@@ -127,8 +134,131 @@ paths:
         - OAuth2:
             - read:sales_order
 # -------------------------------------------------------- #   
-# CONTACT ENDPOINTS
+# CUSTOMER ENDPOINTS
 # -------------------------------------------------------- #     
+  /customers/{accountNo}:
+    get:
+      tags:
+        - Customers
+      operationId: GetCustomer
+      parameters:
+        - name: accountNo
+          in: path
+          required: true
+          description: Customer account number
+          example: '0001234'
+          schema:
+            type: string
+            minLength: 7
+            maxLength: 7
+        - name: Access-Key
+          in: header
+          required: false
+          description: Access token
+          example: 'cQDIgUJZiNQWmvAOCRHbnQyIxXihryLg2S/NQcucOr0='
+          schema:
+            type: string
+        - name: include
+          in: query
+          required: false
+          description: Comma-delimited list of additional fields to include in the response
+          example: 'MarketGroup1'
+          schema:
+            type: string
+      description: Get Codas customer details.<br><br>When using a client credentials OAuth2 token, the Access-Key is required.
+      responses:
+        "200":
+          $ref: "#/components/responses/Customer"
+        "401":
+          $ref: "#/components/responses/UnauthorisedError"
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      security:
+        - OAuth2:
+            - read:customer
+    patch:
+      tags:
+        - Customers
+      operationId: PatchCustomer
+      parameters:
+        - name: accountNo
+          in: path
+          required: true
+          description: Customer account number
+          example: '0001234'
+          schema:
+            type: string
+            minLength: 7
+            maxLength: 7
+        - name: Access-Key
+          in: header
+          required: false
+          description: Access token
+          example: 'cQDIgUJZiNQWmvAOCRHbnQyIxXihryLg2S/NQcucOr0='
+          schema:
+            type: string
+        - name: include
+          in: query
+          required: false
+          description: Comma-delimited list of additional fields to include in the response
+          example: 'MarketGroup1'
+          schema:
+            type: string
+      description: Update Codas customer details.<br><br>When using a client credentials OAuth2 token, the Access-Key is required.
+      requestBody:
+        $ref: "#/components/requestBodies/CustomerPatchBody"
+      responses:
+        "200":
+          $ref: "#/components/responses/Customer"
+        "400":
+          description: Bad Request
+        "401":
+          $ref: "#/components/responses/UnauthorisedError"
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      security:
+        - OAuth2:
+            - update:customer
+  /customers/{accountNo}/authenticate-personal-details:
+    post:
+      tags:
+      - Customers
+      operationId: AuthenticateCustomerPersonalDetails
+      description: Exchange customer personal details for an access token
+      parameters:
+        - name: accountNo
+          in: path
+          required: true
+          description: Customer account number
+          example: '0001234'
+          schema:
+            type: string
+            minLength: 7
+            maxLength: 7
+      requestBody:
+        $ref: "#/components/requestBodies/CustomerPersonalDetailsBody"
+      responses:
+        "200":
+          $ref: "#/components/responses/CustomerPersonalDetailsResponse"
+        "400":
+          description: Bad Request
+        "401":
+          $ref: "#/components/responses/UnauthorisedError"
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      security:
+        - OAuth2:
+            - authenticate:customer
+            
+# -------------------------------------------------------- #
+# CONTACT ENDPOINTS
+# -------------------------------------------------------- #
   /customers/{accountNo}/contacts/:
     get:
       tags:
@@ -209,6 +339,35 @@ paths:
       security:
         - OAuth2:
             - read:contact
+# -------------------------------------------------------- #   
+  /sales-payments:
+    post:
+      tags:
+        - Sales Payments
+      operationId: CreateSalesPayment
+      parameters:
+        - name: Access-Key
+          in: header
+          required: false
+          description: Access token
+          example: 'cQDIgUJZiNQWmvAOCRHbnQyIxXihryLg2S/NQcucOr0='
+          schema:
+            type: string
+      description: Create a sales payment.<br><br>When using a client credentials OAuth2 token, the Access-Key is required.
+      requestBody:
+        $ref: "#/components/requestBodies/SalesPaymentRestrictedBody"
+      responses:
+        "201":
+          $ref: "#/components/responses/StdResponse"
+        "400":
+          description: Bad Request
+        "401":
+          $ref: "#/components/responses/UnauthorisedError"
+        "403":
+          description: Forbidden
+      security:
+        - OAuth2:
+            - create:sales_payment
 # -------------------------------------------------------- #   
 # SCHEMAS
 # -------------------------------------------------------- #    
@@ -334,7 +493,7 @@ components:
           type: number
           description: Value
           example: 19575
-# -------------------------------------------------------- #    
+# -------------------------------------------------------- #
     SalesOrders:
         title: Sales Order List
         type: object
@@ -346,7 +505,7 @@ components:
           Next:
             $ref: "#/components/schemas/Next"
             description: Link to next batch of sales orders
-# -------------------------------------------------------- # 
+# -------------------------------------------------------- #
     Next:
       title: Next
       type: string
@@ -354,7 +513,7 @@ components:
       example: "/api/v1/some-endpoint/?param1=1234567&after=00000&limit=10"
 # -------------------------------------------------------- #    
     MarketingPreference:
-      title: MarketingPreference
+      title: Marketing Preference
       type: object
       properties:
         UID:
@@ -521,9 +680,159 @@ components:
           Next:
             $ref: "#/components/schemas/Next"
             description: Link to next batch of contacts
-# -------------------------------------------------------- #    
+# -------------------------------------------------------- #
+    Customer:
+      title: Customer
+      type: object
+      properties:
+        AccountNo:
+          type: string
+          description: Customer Account Number
+          minLength: 7
+          maxLength: 7
+          example: '0001234'          
+        MarketCode:
+          type: string
+          description: Market Code
+          example: 'DOM'
+          maxLength: 3
+        MarketGroup1:
+          type: string
+          description: Market Group
+          example: 'GRP14'
+          maxLength: 5
+        Balance:
+          type: number
+          description: Total outstanding balance (pence)
+          example: 100000
+        PrefCommLett:
+          type: string
+          description: Preferred method of communication for letters
+          example: 'EMAIL'
+          maxLength: 10
+          enum:
+            - POST
+            - EMAIL
+            - POST,EMAIL
+        PrefCommInv:
+          type: string
+          description: Preferred method of communication for invoices
+          example: 'POST'
+          maxLength: 10
+          enum:
+            - POST
+            - EMAIL
+            - POST,EMAIL
+        PrefCommStmt:
+          type: string
+          description: Preferred method of communication for statements
+          example: 'EMAIL,POST'
+          maxLength: 10
+          enum:
+            - POST
+            - EMAIL
+            - POST,EMAIL
+# -------------------------------------------------------- #
+    CustomerPersonalDetails:
+      title: Customer Personal Details
+      type: object
+      properties:
+        TelNo:
+          type: string
+          description: Telephone number
+          example: '07777 444888'
+          maxLength: 20
+        EmailAddress:
+          type: string
+          description: E-mail address
+          example: 'noemail@cds-systems.co.uk'
+          maxLength: 60
+        PostalCode:
+          description: Postal Code
+          type: string
+          example: 'M5 4TP'
+          maxLength: 9
+# -------------------------------------------------------- #
+    SalesPaymentRestricted:
+      title: Sales Payment Restricted
+      type: object
+      properties:
+        AccountNo:
+          type: string
+          description: Account number
+          example: '0001234'
+          maxLength: 7
+          minLength: 7
+        PaymentType:
+          type: string
+          description: Payment type - must exist in the Sales Ledger Credit Types table
+          example: 'CSH'
+          maxLength: 5
+        PaymentDate:
+          description: Payment date (yyyy-mm-dd)
+          type: string
+          example: '2020-10-17'
+          maxLength: 10
+        PaymentValue:
+          description: Payment value
+          type: number
+          example: 19812
+        PaymentReference:
+          description: Payment value
+          type: string
+          example: 'P123456'
+          maxLength: 20
+        HowCreated:
+          description: How created value
+          type: string
+          example: 'ONLINE'
+          maxLength: 20
+        PaymentLines:
+          type: array
+          description: Array of payment lines (only applicable if allocating payment to existing debits)
+          items:
+            $ref: '#/components/schemas/SalesPaymentLineRestricted'
+# -------------------------------------------------------- #
+    SalesPaymentLineRestricted:
+      title: Sales Payment Line Restricted
+      type: object
+      properties:
+        Value:
+          description: Line value
+          type: number
+          example: 19812
+        TransReference:
+          description: Transaction reference
+          type: string
+          example: 'T729861'
+          maxLength: 20
+# -------------------------------------------------------- #
+    PatchDocument:
+      title: Patch Document
+      type: array
+      items:
+        type: object
+        required:
+         - "op"
+         - "path"
+         - "value"
+        properties: 
+         op: 
+          type: string 
+          description: The operation to be performed 
+          enum:
+           - "replace"
+         path: 
+          type: string 
+          description: Field name pointer
+          example: /FieldName
+         value: 
+          type: object 
+          description: Field value
+          example: "Field value"
+# -------------------------------------------------------- #
 # RESPONSES
-# -------------------------------------------------------- #    
+# -------------------------------------------------------- #
   responses:
     UnauthorisedError:
       description: Access token is missing or invalid
@@ -573,6 +882,29 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Contacts"
+# -------------------------------------------------------- #    
+    Customer:
+      description: Success
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Customer"
+# -------------------------------------------------------- #      
+    CustomerPersonalDetailsResponse:
+      description: Success
+      content:
+        application/json:
+          schema:
+            description: Success
+            properties:
+              access_key:
+                type: string
+                description: Unique access key for customer
+                example: "cQDIgUJZiNQWmvAOCRHbnQyIxXihryLg2S/NQcucOr0="
+              expires:
+                type: number
+                description: Expiration time (Unix epoch)
+                example: 1602944485
 # -------------------------------------------------------- # 
 # SECURITY
 # -------------------------------------------------------- #    
@@ -587,12 +919,24 @@ components:
             codasapi.sales_order.read: Grants read access to sales orders, only their own by default
             #------#
             codasapi.contact.read: Grants read access to customer further contacts, only their own by default
+            #------#
+            codasapi.customer.read: Grants read access to customers
+            codasapi.customer.update: Grants update access to customers
+            codasapi.customer.authenticate: Grants update access to customer personal details authentication
+            #------#
+            codasapi.sales_payment.create: Grants creation access for sales payments
         clientCredentials:
           tokenUrl: https://identity.example.com/connect/token
           scopes:
             codasapi.sales_order.read: Grants read access to sales orders, only their own by default
             #------#
             codasapi.contact.read: Grants read access to customer further contacts, only their own by default
+            #------#
+            codasapi.customer.read: Grants read access to customers
+            codasapi.customer.update: Grants update access to customers
+	    codasapi.customer.authenticate: Grants update access to customer personal details authentication
+            #------#
+            codasapi.sales_payment.create: Grants creation access for sales payments
 # -------------------------------------------------------- #    
 # REQUEST BODIES
 # -------------------------------------------------------- #    
@@ -633,3 +977,35 @@ components:
         application/json-patch+json:
           schema:
             $ref: "#/components/schemas/SalesOrder"
+# -------------------------------------------------------- #   
+    CustomerPatchBody:
+      description: An object containing customer update details
+      required: true
+      content:
+        application/json-patch+json:
+          schema:
+            $ref: "#/components/schemas/PatchDocument"
+          examples:
+            default:
+              summary: Example 1
+              value: |
+                [
+                  { "op": "replace", "path": "/PrefCommLett", "value": "EMAIL" },
+                  { "op": "replace", "path": "/PrefCommInv", "value": "POST" },
+                  { "op": "replace", "path": "/PrefCommStmt", "value": "EMAIL,POST" }
+                ]
+    CustomerPersonalDetailsBody:
+      description: An object containing the customer personal details
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CustomerPersonalDetails"
+# -------------------------------------------------------- #
+    SalesPaymentRestrictedBody:
+      description: An object containing a sales payment
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SalesPaymentRestricted"
