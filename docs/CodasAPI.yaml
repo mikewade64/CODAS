@@ -934,7 +934,7 @@ components:
             #------#
             codasapi.customer.read: Grants read access to customers
             codasapi.customer.update: Grants update access to customers
-	    codasapi.customer.authenticate: Grants update access to customer personal details authentication
+            codasapi.customer.authenticate: Grants update access to customer personal details authentication
             #------#
             codasapi.sales_payment.create: Grants creation access for sales payments
 # -------------------------------------------------------- #    
