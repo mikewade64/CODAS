@@ -1,11 +1,11 @@
 openapi: 3.0.0
 info:
-  version: "3.0" # 05/05/2021
+  version: "3.0" # 19/05/2021
   title: 'Codas Public'
   description: 'An API that provides Public/Third Party access to customer specific information such as pricing and transactional data for registered Codas Online customers. Provides access to reference data and ability to update customer details and create new sales orders. This API requires a valid CDS CODAS license.  
 <br>
 <br>Version 2.0  - 05/08/2019  - Initial documentation creation
-<br>Version 3.0  - 05/05/2021 - Add third party endpoints'
+<br>Version 3.0  - 19/05/2021 - Add third party endpoints'
   termsOfService: https://www.codas.com/privacy-policy
   contact:
     name: Support
@@ -16,7 +16,7 @@ info:
     url: https://www.codas.com
 # -------------------------------------------------------- #
 # API SERVERS
-# -------------------------------------------------------- # 
+# -------------------------------------------------------- #
 servers: 
 # Added by API Auto Mocking Plugin
 # Added by API Auto Mocking Plugin
@@ -26,13 +26,13 @@ servers:
   url: https://virtserver.swaggerhub.com/codas7/Codas7a/1
 - url: https://sandbox.dev.codas.com/api/v1
   description: Sandbox API Server
-# -------------------------------------------------------- #   
+# -------------------------------------------------------- #
 # RESOURCE ENDPOINTS
-# -------------------------------------------------------- #    
+# -------------------------------------------------------- #
 paths:
-# -------------------------------------------------------- #   
+# -------------------------------------------------------- #
 # SALES ORDER ENDPOINTS
-# -------------------------------------------------------- #     
+# -------------------------------------------------------- #
   /sales-orders/:
     get:
       tags:
@@ -79,7 +79,7 @@ paths:
       security:
         - OAuth2:
             - codasapi.sales_order.read
-  # -------------------------------------------------------- #    
+  # -------------------------------------------------------- #
   /sales-orders/{uid}:
     get:
       tags:
@@ -116,7 +116,7 @@ paths:
       security:
         - OAuth2:
             - codasapi.sales_order.read
-# -------------------------------------------------------- #   
+# -------------------------------------------------------- #
 # CUSTOMER ENDPOINTS
 # -------------------------------------------------------- #
   /customers/{accountNo}:
@@ -143,15 +143,17 @@ paths:
             type: string
         - name: include
           in: query
+          style: form
+          explode: false
           required: false
-          description: Comma-delimited list of additional fields to include in the response
+          description: Comma-separated values of field names that are optional (See Customer Include schema for the list of fields) to include in the response body.
           example: 'MarketGroup1'
           schema:
             type: string
       description: Get Codas customer details.<br><br>When using a client credentials OAuth2 token, the Access-Key is required.
       responses:
         "200":
-          $ref: "#/components/responses/Customer"
+          $ref: "#/components/responses/CustomerInclude"
         "401":
           $ref: "#/components/responses/UnauthorisedError"
         "403":
@@ -185,7 +187,7 @@ paths:
         - name: include
           in: query
           required: false
-          description: Comma-delimited list of additional fields to include in the response
+          description: Comma-separated values of field names that are optional (See Customer Include schema for the list of fields) to include in the response body.
           example: 'MarketGroup1'
           schema:
             type: string
@@ -194,7 +196,7 @@ paths:
         $ref: "#/components/requestBodies/CustomerPatchBody"
       responses:
         "200":
-          $ref: "#/components/responses/Customer"
+          $ref: "#/components/responses/CustomerInclude"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -206,44 +208,7 @@ paths:
       security:
         - OAuth2:
             - codasapi.customer.update
-    put:
-      tags:
-        - Customers
-      operationId: PutCustomer
-      parameters:
-        - name: accountNo
-          in: path
-          required: true
-          description: Customer account number
-          example: '0001234'
-          schema:
-            type: string
-            minLength: 7
-            maxLength: 7
-        - name: Access-Key
-          in: header
-          required: false
-          description: Customer access token
-          example: 'cQDIgUJZiNQWmvAOCRHbnQyIxXihryLg2S/NQcucOr0='
-          schema:
-            type: string
-      description: Update Codas customer.
-      requestBody:
-        $ref: "#/components/requestBodies/CustomerPost"
-      responses:
-        "200":
-          $ref: "#/components/responses/Customer"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          description: Unauthorised
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          description: Not Found
-      security:
-        - OAuth2:
-            - codasapi.customer.update
+# -------------------------------------------------------- #
   /customers/{accountNo}/authenticate-personal-details:
     post:
       tags:
@@ -260,6 +225,14 @@ paths:
             type: string
             minLength: 7
             maxLength: 7
+        - name: Access-Key-Verification
+          in: header
+          description: Optional verification type for access keys
+          example: 'IVR'
+          schema:
+            type: string
+            enum:
+              - 'IVR'
       requestBody:
         $ref: "#/components/requestBodies/CustomerPersonalDetailsBody"
       responses:
@@ -308,7 +281,7 @@ paths:
             type: string
             minLength: 5
             maxLength: 5
-      description: Get Codas Online customer contacts
+      description: Get customer contacts
       responses:
         "200":
           $ref: "#/components/responses/Contacts"
@@ -321,7 +294,7 @@ paths:
       security:
         - OAuth2:
             - codasapi.contact.read
-# ------------------------------------------------------ #    
+# ------------------------------------------------------ #
   /customers/{accountNo}/contacts/{uid}:
     get:
       tags:
@@ -346,7 +319,7 @@ paths:
             type: string
             minLength: 5
             maxLength: 5
-      description: Get the Codas Online customer contact
+      description: Get a customer contact
       responses:
         "200":
           $ref: "#/components/responses/Contact"
@@ -359,6 +332,46 @@ paths:
       security:
         - OAuth2:
             - codasapi.contact.read
+    patch:
+      tags:
+        - Contacts
+      operationId: PatchContact
+      parameters:
+        - name: accountNo
+          in: path
+          required: true
+          description: Customer Account Number
+          example: '0001234'
+          schema:
+            type: string
+            minLength: 7
+            maxLength: 7
+        - name: uid
+          in: path
+          required: true
+          description: Contact Unique ID (within Customer)
+          example: '00000'
+          schema:
+            type: string
+            minLength: 5
+            maxLength: 5
+      description: Update Codas customer contact details.
+      requestBody:
+        $ref: "#/components/requestBodies/ContactPatchBody"
+      responses:
+        "200":
+          $ref: "#/components/responses/Contact"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorisedError"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not Found
+      security:
+        - OAuth2:
+            - codasapi.contact.update
 # -------------------------------------------------------- #
 # SALES PAYMENTS ENDPOINTS
 # -------------------------------------------------------- #
@@ -447,7 +460,7 @@ paths:
           schema:
             type: string
             minLength: 10
-            maxLength: 20
+            maxLength: 10
         - name: tpguid
           in: query
           required: true
@@ -459,8 +472,8 @@ paths:
       requestBody:
         $ref: "#/components/requestBodies/OrderPatchBody"
       responses:
-        "204":
-          description: No Content
+        "200":
+          $ref: "#/components/responses/SalesOrder"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -472,15 +485,54 @@ paths:
       security:
         - OAuth2:
             - codasapi.sales_order.update
-# -------------------------------------------------------- #   
+  /third-party/sales-orders/{uid}/order-payment:
+    post:
+      tags:
+        - Third Party Interface
+      operationId: PostOrderPayment
+      parameters:
+        - name: uid
+          in: path
+          required: true
+          description: Order UID
+          example: '0000100100'
+          schema:
+            type: string
+            minLength: 10
+            maxLength: 10
+        - name: tpguid
+          in: query
+          required: true
+          description: TP Order GUID
+          example: 'E4210C10-04CA-4757-A7BF-69BFC3541B28'
+          schema:
+            type: string
+      description: Create a new order payment. The GUID provided when making the order is required.
+      requestBody:
+        $ref: "#/components/requestBodies/SalesOrderPaymentBody"
+      responses:
+        "201":
+          $ref: "#/components/responses/CreatedNoHeader"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: Unauthorised
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not Found
+      security:
+        - OAuth2:
+            - codasapi.sales_order.update
+# -------------------------------------------------------- #
 # SCHEMAS
-# -------------------------------------------------------- #    
+# -------------------------------------------------------- #
 components:
   schemas:
     SalesOrder:
       title: Sales Order
       type: object
-      properties:   
+      properties:
         UID:
           type: string
           description: UID - Unique Order ID (ignored in Post)
@@ -497,7 +549,7 @@ components:
           example: '1234567'
           minLength: 7
           maxLength: 7
-        InvoiceNo: 
+        InvoiceNo:
           type: string
           description: Invoice Number (ignored in Post)
           example: 'T123456'
@@ -505,12 +557,12 @@ components:
         OrderDate:
           type: string
           description: Order date (YYYY-MM-DD)
-          example: '2019-07-22'
+          example: 'YYYY-MM-DD'
           maxLength: 10
         IntendedDeliveryDate:
           type: string
           description: Earliest delivery date (YYYY-MM-DD or null)
-          example: '2019-07-24'
+          example: 'YYYY-MM-DD'
           maxLength: 10
         LatestDeliveryDate:
           type: string
@@ -520,13 +572,92 @@ components:
         DeliveryDate:
           type: string
           description: Actual delivery date (YYYY-MM-DD or null), only applicable when Status is greater than 9 and less than 90
-          example: '2019-07-27'
+          example: 'YYYY-MM-DD'
           maxLength: 10
         EstArrDate:
           type: string
           description: Estimated delivery date (YYYY-MM-DD or null), only applicable when WindowsLoad is populated
-          example: '2019-07-27'
+          example: 'YYYY-MM-DD'
           maxLength: 10
+        OrderDepot:
+          type: string
+          description: Order depot
+          example: '100'
+          maxLength: 3
+        AddressPostcode:
+          type: string
+          description: Delivery address postcode
+          example: ''
+          maxLength: 10
+        Status:
+          type: integer
+          description: Status (ignored in Post)
+          example: 10
+        StatusDescription:
+          type: string
+          description: Status Description (ignored in Post)
+          example: 'Confirmed'
+        WindowsLoad:
+          type: string
+          description: Load row id. Empty string unless the order is on a load
+          example: '0000001234'
+          maxLength: 10
+        TotValIncVAT:
+          type: number
+          description: Order total value including VAT
+          example: 23490
+        OrderLines:
+          type: array
+          description: Array of order lines
+          items:
+            $ref: '#/components/schemas/SalesOrderLine'
+        DeliveryLines:
+          type: array
+          description: Array of delivery lines (only applicable when the status is greater than 9)
+          items:
+            $ref: '#/components/schemas/SalesOrderLine'
+# -------------------------------------------------------- #
+    SalesOrderLine:
+      title: Sales Order Line
+      type: object
+      properties:
+        Line:
+          type: integer
+          description: Line - Unique within Order
+          example: 1
+          maxLength: 5
+        ProductCode:
+          type: string
+          description: Product code
+          example: '001'
+          maxLength: 10
+        Quantity:
+          type: number
+          description: Quantity
+          example: 1000
+        EnteredUnit:
+          type: string
+          description: Unit of Measure 'E' = Each,'K' = Kgs,'L' = Ambient Litres,'L15' = Litres 15,'T' = Tonnes
+          example: 'L'
+          maxLength: 3
+        VATAmount:
+          type: number
+          description: VAT amount
+          example: 20000
+        Val:
+          type: number
+          description: Value
+          example: 120000
+# -------------------------------------------------------- #
+    ThirdPartySalesOrder:
+      title: Third Party Sales Order
+      type: object
+      properties:
+        ThirdPartyInterface:
+          type: array
+          description: Array of third party interfaces associated with the customer
+          items:
+            $ref: '#/components/schemas/ThirdPartyInterfacePost'
         OrderDepot:
           type: string
           description: Order depot
@@ -583,113 +714,6 @@ components:
           example: '15:30:54'
           maxLength: 8
           nullable: true
-        TotValIncVAT:
-          type: number
-          description: Order total value including VAT
-          example: 23490
-        Status:
-          type: integer
-          description: Status (ignored in Post)
-          example: 10
-        StatusDescription:
-          type: string
-          description: Status Description (ignored in Post)
-          example: 'Confirmed'
-        WindowsLoad:
-          type: string
-          description: Load row id. Empty string unless the order is on a load
-          example: '0000001234'
-          maxLength: 10
-        OrderLines:  
-          type: array
-          description: Array of order lines
-          items:
-            $ref: '#/components/schemas/SalesOrderLine'          
-        DeliveryLines:  
-          type: array
-          description: Array of delivery lines (only applicable when the status is greater than 9)
-          items:
-            $ref: '#/components/schemas/SalesOrderLine'
-# -------------------------------------------------------- #  
-    ThirdPartySalesOrder:
-      title: Third Party Sales Order
-      type: object
-      properties:   
-        ThirdPartyInterface:
-          type: array
-          description: Array of third party interfaces associated with the customer
-          items:
-            $ref: '#/components/schemas/ThirdPartyInterfacePost'
-        AddressLine1:
-          type: string
-          description: Delivery address line 1
-          example: ''
-          maxLength: 50
-        AddressLine2:
-          type: string
-          description: Delivery address line 2
-          example: ''
-          maxLength: 50
-        AddressLine3:
-          type: string
-          description: Delivery address line 3
-          example: ''
-          maxLength: 50
-        AddressLine4:
-          type: string
-          description: Delivery address line 4
-          example: ''
-          maxLength: 50
-        AddressPostcode:
-          type: string
-          description: Delivery address postcode
-          example: ''
-          maxLength: 10
-        DeliveryInstructions:
-          type: string
-          description: Delivery instructions
-          maxLength: 40
-        SpecialDeliveryInstructionsLine1:
-          type: string
-          description: Special delivery instructions line 1
-          maxLength: 100
-        SpecialDeliveryInstructionsLine2:
-          type: string
-          description: Special delivery instructions line 2
-          maxLength: 100
-        SpecialDeliveryInstructionsLine3:
-          type: string
-          description: Special delivery instructions line 3
-          maxLength: 100
-        SpecialDeliveryInstructionsLine4:
-          type: string
-          description: Special delivery instructions line 4
-          maxLength: 100
-        CustomerOrderNumber:
-          type: string
-          description: Customer order number
-          example: ''
-          maxLength: 30
-        MaximumVehicleType:
-          type: string
-          description: Maximum vehicle type
-          example: '0'
-          maxLength: 10
-        IntendedDeliveryDate:
-          type: string
-          description: Earliest delivery date (YYYY-MM-DD or null)
-          example: '2019-07-24'
-          maxLength: 10
-        LatestDeliveryDate:
-          type: string
-          description: Latest delivery date (YYYY-MM-DD or null)
-          example: '2019-07-27'
-          maxLength: 10
-        OrderDepot:
-          type: string
-          description: Order depot
-          example: '100'
-          maxLength: 3
         DayTimeWindow:
           type: array
           description: Array of days and times
@@ -704,60 +728,17 @@ components:
           type: array
           description: Array of order payments
           items:
-            $ref: '#/components/schemas/OrderPayment'
-        OrderLines:  
+            $ref: '#/components/schemas/ThirdPartyOrderPayment'
+        OrderLines:
           type: array
           description: Array of order lines
           items:
             $ref: '#/components/schemas/ThirdPartySalesOrderLine'
-# -------------------------------------------------------- #    
-    SalesOrderLine:
-      title: Sales Order Line
-      type: object
-      properties: 
-        Line:
-          type: integer
-          description: Line - Unique within Order
-          example: 1
-          maxLength: 5
-        ProductCode:
-          type: string
-          description: Product code
-          example: '001'
-          maxLength: 10
-        Quantity:
-          type: number
-          description: Quantity
-          example: 1000
-          maxLength: 8
-        EnteredUnit:
-          type: string
-          description: Unit of Measure 'E' = Each,'K' = Kgs,'L' = Ambient Litres,'L15' = Litres 15,'T' = Tonnes
-          example: 'L'
-          maxLength: 3
-        UnitPrice:
-          type: number
-          description: Unit price
-          example: 100.00
-          maxLength: 8
-        VATRate:
-          type: string
-          description: VAT rate
-          example: "20%"
-          maxLength: 4
-        VATAmount:
-          type: number
-          description: VAT amount
-          example: 20000
-        Val:
-          type: number
-          description: Value
-          example: 120000
 # -------------------------------------------------------- #
     ThirdPartySalesOrderLine:
       title: Third Party Sales Order Line
       type: object
-      properties: 
+      properties:
         ProductCode:
           type: string
           description: Product code
@@ -767,7 +748,6 @@ components:
           type: number
           description: Quantity
           example: 1000
-          maxLength: 8
         UnitPrice:
           type: number
           description: Unit price
@@ -777,12 +757,102 @@ components:
           type: string
           description: VAT rate
           example: "5.00"
+          maxLength: 6
+# -------------------------------------------------------- #
+    ThirdPartyOrderPayment:
+      title: Third Party Order Payment
+      description: Order payment body. Please note that card payments are only allowed when the Codas system is configured to use Realex
+      type: object
+      properties:
+        Amount:
+          type: number
+          description: Amount
+          example: 19812
+          maxLength: 10
+        Ref:
+          description: Payment reference
+          type: string
+          example: 'P123456'
+          maxLength: 20
+        CardType:
+          description: Card payment type, must exist in the PaymentCard table - only relevant for card payments
+          type: string
+          example: 'VISA'
+        CardNumber:
+          description: The last 4 digits of the payment card number - only relevant for card payments
+          type: string
+          example: 1234
           maxLength: 4
+        CardExpiryDate:
+          description: Card payment expiry date - only relevant for card payments
+          type: string
+          example: 'MM/YYYY'
+          maxLength: 7
+        CardSystem:
+          description: System used for processing the transaction - only required for card payments
+          type: string
+          example: 'PAYANDSHOP'
+          maxLength: 20
+        CardSystemAccount:
+          description: System account - only required for card payments
+          type: string
+          example: 'account'
+          maxLength: 20
+        CardSystemRef:
+          description: Reference generated by processing system - only required for card payments
+          type: string
+          example: '45434563445634545634'
+          maxLength: 20
+        CardResult:
+          description: Result from the processong system - only required for card payments
+          type: string
+          example: '00'
+          maxLength: 10
+        CardResultMessage:
+          description: Result message from the processong system - only required for card payments
+          type: string
+          example: 'AUTHORISED'
+          maxLength: 50
+        CardAuthCode:
+          description: Authorisation code - only required for card payments
+          type: string
+          example: '12345'
+          maxLength: 30
+        CardTransType:
+          description: Card transaction type - only required for card payments
+          type: string
+          example: 'A'
+          maxLength: 2
+          enum:
+            - A
+        CardTransRef:
+          description: Card transaction reference - only required for card payments
+          type: string
+          example: 'GDFG34563456FG5343'
+          maxLength: 50
+        CardTransTime:
+          description: UTC Timestamp from the processong system - only required for card payments
+          type: string
+          example: '2021-05-14T13:11:49.000Z'
+          maxLength: 50
+        CardSettle:
+          description: Whether or not the payment is settled - only required for card payments
+          type: string
+          example: 'Y'
+          maxLength: 1
+          enum:
+            - Y
+            - N
+        CardCurrency:
+          description: Card transaction currency - only required for card payments
+          type: string
+          example: 'GBP'
+          maxLength: 10
 # -------------------------------------------------------- #
     DayTimeWindow:
       title: Day Time Window
       type: object
-      properties: 
+      properties:
         Day:
           type: string
           description: Day
@@ -809,7 +879,7 @@ components:
     UseStatement:
       title: Use Statement
       type: object
-      properties: 
+      properties:
         ProductCode:
           type: string
           description: Product code
@@ -826,105 +896,18 @@ components:
           example: 'D'
           maxLength: 3
 # -------------------------------------------------------- #
-    OrderPayment:
-      title: Order Payment. Please note that card payments are only allowed when the Codas system is configured to use Realex
-      type: object
-      properties: 
-        Amount:
-          type: number
-          description: Amount
-          example: 19812
-          maxLength: 10
-        Type:
-          type: string
-          description: Payment type - must exist in the Sales Ledger Credit Types table
-          example: 'CSH'
-          maxLength: 5
-        SubType:
-          type: string
-          description: Payment sub type - only required for card payments
-          example: 'CSH'
-          maxLength: 5
-        Ref:
-          description: Payment reference
-          type: string
-          example: 'P123456'
-          maxLength: 20
-        CardType:
-          description: Card payment type, must exist in the PaymentCard table - only required for card payments
-          type: string
-          example: 'VISA'
-        CardNumber:
-          description: The last 4 digits of the payment card number - only required for card payments
-          type: number
-          example: 1234
-          maxLength: 4
-        CardExpiryDate:
-          description: Card payment expiry date - only required for card payments
-          type: string
-          example: '10/2024'
-          maxLength: 7
-        CardSystem:
-          description: System used for processing the transaction - only required for card payments
-          type: string
-          example: 'PAYANDSHOP'
-          maxLength: 20
-        CardSystemAccount:
-          description: System account - only required for card payments
-          type: string
-          example: 'account'
-          maxLength: 20
-        CardSystemRef:
-          description: Reference generated by processing system - only required for card payments
-          type: string
-          example: '45434563445634545634'
-          maxLength: 20
-        CardAuthCode:
-          description: Authorisation code - only required for card payments
-          type: string
-          example: '12345'
-          maxLength: 30
-        CardTransType:
-          description: Card transaction type - only required for card payments
-          type: string
-          example: 'A'
-          maxLength: 2
-          enum:
-            - A
-        CardTransRef:
-          description: Card transaction reference - only required for card payments
-          example: 'GDFG34563456FG5343'
-          maxLength: 50
-        CardSettle:
-          description: Whether or not the payment is settled - only required for card payments
-          example: 'Y'
-          maxLength: 1
-          enum:
-            - Y
-            - N
-        CardCurrency:
-          description: Card transaction currency - only required for card payments
-          example: 'GBP'
-          maxLength: 10
-# -------------------------------------------------------- #
     SalesOrders:
-        title: Sales Order List
-        type: object
-        properties:
-          Items:
-            type: array
-            items:
-              $ref: "#/components/schemas/SalesOrder"
-          Next:
-            $ref: "#/components/schemas/Next"
-            description: Link to next batch of sales orders
+      title: Sales Order List
+      type: object
+      properties:
+        Items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SalesOrder"
+        Next:
+          $ref: "#/components/schemas/Next"
+          description: Link to next batch of sales orders
 # -------------------------------------------------------- #
-    Next:
-      title: Next
-      type: string
-      format: uri
-      example: "/api/v1/some-endpoint/?param1=1234567&after=00000&limit=10"
-# -------------------------------------------------------- #    
     MarketingPreference:
       title: Marketing Preference
       type: object
@@ -951,13 +934,13 @@ components:
           maxLength: 10
         CreatedOn:
           type: string
-          anyOf: 
+          anyOf:
             - type: string
               format: date-time
             - type: string
               maxLength: 0
           readOnly: true
-          example: "2019-10-09T17:07:30"
+          example: "YYYY-MM-DDTHH:MM:SS"
         TelesalesPref:
           type: string
           minLength: 0
@@ -970,7 +953,6 @@ components:
             - 
  # -------------------------------------------------------- #
     Contact:
-      title: Contact
       type: object
       properties:
         AccountNo:
@@ -978,7 +960,7 @@ components:
           description: Customer Account Number
           minLength: 7
           maxLength: 7
-          example: '0001234'          
+          example: '0001234'
         UID:
           type: string
           description: Contact Unique ID (within Customer)
@@ -990,26 +972,11 @@ components:
           description: Associate Full Name
           example: 'Mr Joe T Bloggs'
           maxLength: 80
-        Title:
-          type: string
-          description: Associate Title
-          example: 'Mr'
-          maxLength: 10
-        Forename:
-          type: string
-          description: Associate Forename
-          example: 'Joe'
-          maxLength: 20          
         Initials:
           type: string
           description: Associate Initials
           example: 'T'
           maxLength: 10
-        Surname:
-          type: string
-          description: Associate Surname
-          example: 'Bloggs'
-          maxLength: 30 
         AddressToUse:
           type: string
           description: Which customer address to use for associate - (N)ormal, (I)nvoice or (S)pecified
@@ -1044,32 +1011,16 @@ components:
           type: string
           description: Associate Specified Address Country
           example: 'UK'
-          maxLength: 3  
+          maxLength: 3
         MarketingPreferences:
           type: array
           items:
             $ref: "#/components/schemas/MarketingPreference"
-        EMail:
-          type: string
-          description: Associate Email Address
-          format: email
-          maxLength: 60
-          example: 'customer@domain.com'
-        TelNo: 
-          type: string
-          description: Associate Telephone Number
-          maxLength: 20
-          example: '01618329251'
         TelNo2: 
           type: string
           description: Second Associate Telephone Number
           maxLength: 20
           example: '01618329251'
-        MobileNo:
-          type: string
-          description: Associate Mobile Number
-          minLength: 40
-          example: '07775743400'
         OnlineSvcUserName:
           type: string
           description: Online Login User Name
@@ -1081,37 +1032,81 @@ components:
           minLength: 1
           maxLength: 1
           example: 'Y'
-# -------------------------------------------------------- #    
-    Contacts:
-        title: Contacts List
-        type: object
-        properties:
-          Items:
-            type: array
-            items:
-              $ref: "#/components/schemas/Contact"
-          Next:
-            $ref: "#/components/schemas/Next"
-            description: Link to next batch of contacts
+        Title:
+          type: string
+          description: Associate Title
+          example: 'Mr'
+          maxLength: 10
+        Forename:
+          type: string
+          description: Associate Forename
+          example: 'Joe'
+          maxLength: 20
+        Surname:
+          type: string
+          description: Associate Surname
+          example: 'Bloggs'
+          maxLength: 30 
+        EMail:
+          type: string
+          description: Associate Email Address
+          format: email
+          maxLength: 60
+          example: 'customer@domain.com'
+        TelNo: 
+          type: string
+          description: Associate Telephone Number
+          maxLength: 20
+          example: '01618329251'
+        MobileNo:
+          type: string
+          description: Associate Mobile Number
+          minLength: 40
+          example: '07775743400'
+        Categories:
+          type: string
+          description: Categories
+          example: 'MAIN,EMAILDELIVNOTIFY,EMAILOCNOTIFY'
+        WorkflowContactMethod:
+          description: Workflow contact method codes
+          type: string
+          example: 'S'
+          maxLength: 20
+          enum:
+            - C
+            - C,E
+            - C,S
+            - C,SE
+            - E
+            - S
+            - SE
+        PrefTel:
+          description: Preferred Telephone Number Type
+          type: string
+          example: 'T'
+          enum:
+            - T
+            - M
+            - ''
 # -------------------------------------------------------- #
-    Customer:
-      title: Customer
+    Contacts:
+      title: Contact List
       type: object
       properties:
-        AccManager:
+        Items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Contact"
+        Next:
+          $ref: "#/components/schemas/Next"
+          description: Link to next batch of contacts
+# -------------------------------------------------------- #
+    Customer:
+      properties:
+        Name:
           type: string
-          maxLength: 3
-          example: '001'
-        AccountNo:
-          type: string
-          description: Customer account number
-          minLength: 7
-          maxLength: 7
-          example: '0001234'
-        AccountType:
-          type: string
-          maxLength: 1
-          example: '0'
+          description: Full name
+          maxLength: 40
         Address1:
           type: string
           description: Address line 1
@@ -1128,6 +1123,30 @@ components:
           type: string
           description: Address line 4
           maxLength: 50
+        MarketCode:
+          type: string
+          description: Market code
+          example: 'DOM'
+          maxLength: 3
+        PostalCode:
+          type: string
+          description: Postal code
+          maxLength: 9
+          example: 'CV37 6QW'
+        AccManager:
+          type: string
+          maxLength: 3
+          example: '001'
+        AccountNo:
+          type: string
+          description: Customer account number
+          minLength: 7
+          maxLength: 7
+          example: '0001234'
+        AccountType:
+          type: string
+          maxLength: 1
+          example: '0'
         Balance:
           type: number
           description: Total outstanding balance (pence)
@@ -1153,24 +1172,6 @@ components:
           description: Depot code
           example: 'DOM'
           maxLength: 3
-        MarketCode:
-          type: string
-          description: Market code
-          example: 'DOM'
-          maxLength: 3
-        MarketGroup1:
-          type: string
-          description: Market group
-          example: 'GRP14'
-          maxLength: 5
-        Name:
-          type: string
-          description: Full name
-          maxLength: 40
-        PostalCode:
-          type: string
-          description: Postal code
-          maxLength: 5
         PrefCommLett:
           type: string
           description: Preferred method of communication for letters
@@ -1217,15 +1218,19 @@ components:
           description: RDCO number
           example: '90909090'
 # -------------------------------------------------------- #
-    ThirdPartyCustomer:
-      title: Third Party Customer
+    CustomerInclude:
+      title: Customer Include - (Optional)
       type: object
       properties:
-        ThirdPartyInterface:
-          type: array
-          description: Array of third party interfaces associated with the customer
-          items:
-            $ref: '#/components/schemas/ThirdPartyInterfacePost'
+        MarketGroup1:
+          type: string
+          description: Market group - (Optional)
+          example: 'GRP14'
+          maxLength: 5
+# -------------------------------------------------------- #
+    ThirdPartyCustomer:
+      title: Third Party Customer
+      properties:
         Name:
           type: string
           description: Full name
@@ -1254,7 +1259,8 @@ components:
         PostalCode:
           type: string
           description: Postal code
-          maxLength: 5
+          maxLength: 9
+          example: 'CV37 6QW'
         VATNumber:
           type: string
           description: VAT number
@@ -1263,7 +1269,11 @@ components:
           type: string
           description: RDCO number
           example: '90909090'
-          maxLength: 20
+        ThirdPartyInterface:
+          type: array
+          description: Array of third party interfaces associated with the customer
+          items:
+            $ref: '#/components/schemas/ThirdPartyInterfacePost'
         CustomerAssociate:
           type: array
           description: Customer Main Contact
@@ -1336,31 +1346,35 @@ components:
         PostalCode:
           description: Postal Code
           type: string
-          example: 'M5 4TP'
+          example: 'CV37 6QW'
           maxLength: 9
+# -------------------------------------------------------- #
+    CustomerPersonalDetailsIVR:
+      title: Customer Personal Details (IVR)
+      type: object
+      properties:
+        PostalCode:
+          description: Postal Code Numerics
+          type: string
+          example: '376'
+          maxLength: 6
 # -------------------------------------------------------- #
     ThirdPartyInterface:
       title: Third Party Interfaces
-      type: object
-      properties:
-        Sequence:
-          description: Third party interface sequence no.
-          type: integer
-          example: 1
-        AccountNo:
-          description: Customer account number
-          minLength: 7
-          maxLength: 7
-          example: '0001234'
-        Interface:
-          description: Third party interface Code
-          type: string
-          example: 'THIRDPARTY'
-          maxLength: 10
-        ThirdPartyRef:
-          description: Third party reference
-          type: string
-          maxLength: 30
+      allOf:
+        - $ref: "#/components/schemas/ThirdPartyInterfacePost"
+        - type: object
+          properties:
+            Sequence:
+              description: Third party interface sequence no.
+              type: integer
+              example: 1
+            AccountNo:
+              description: Customer account number
+              type: string
+              minLength: 7
+              maxLength: 7
+              example: '0001234'
 # -------------------------------------------------------- #
     ThirdPartyInterfacePost:
       title: Third Party Interfaces Post
@@ -1394,7 +1408,7 @@ components:
         PaymentDate:
           description: Payment date (yyyy-mm-dd)
           type: string
-          example: '2020-10-17'
+          example: 'YYYY-MM-DD'
           maxLength: 10
         PaymentValue:
           description: Payment value
@@ -1408,7 +1422,7 @@ components:
         HowCreated:
           description: How created value
           type: string
-          example: 'ONLINE'
+          example: 'CODASAPI'
           maxLength: 20
         PaymentLines:
           type: array
@@ -1430,32 +1444,40 @@ components:
           example: 'T729861'
           maxLength: 20
 # -------------------------------------------------------- #
-    PatchDocument:
-      title: Patch Document
+    Patch:
       type: array
       items:
-        type: object
-        required:
-         - "op"
-         - "path"
-         - "value"
-        properties: 
-         op: 
+        $ref: "#/components/schemas/PatchDocument"
+# -------------------------------------------------------- #
+    PatchDocument:
+      title: "Patch Document"
+      type: object
+      required:
+        - "op"
+        - "path"
+        - "value"
+      properties:
+        op:
           type: string 
-          description: The operation to be performed 
+          description: The operation to be performed
           enum:
-           - "replace"
-         path: 
+            - "replace"
+            - "add"
+        path: 
           type: string 
           description: Field name pointer
           example: /FieldName
-         value: 
-          type: object 
+        value:
+          type: object
           description: Field value
           example: "Field value"
 # -------------------------------------------------------- #
+    Next:
+      type: string
+      format: uri
+      example: "/api/v1/some-endpoint/?param1=1234567&after=00000&limit=10"
+# -------------------------------------------------------- #
     Status:
-      title: Status
       type: object
       description: Status object describing issues with the request
       properties:
@@ -1467,9 +1489,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Warning"
-# -------------------------------------------------------# 
+# -------------------------------------------------------#
     Error:
-      title: Error
       type: object
       description: An error object
       properties:
@@ -1482,11 +1503,10 @@ components:
         Message:
           type: string
           description: Error message
-# -------------------------------------------------------# 
+# -------------------------------------------------------#
     Warning:
-      title: Warning
       type: object
-      description: An warning object
+      description: A warning object
       properties:
         Code:
           type: string
@@ -1503,8 +1523,10 @@ components:
   responses:
     UnauthorisedError:
       description: Access token is missing or invalid
+# -------------------------------------------------------- #
     UnprocessableError:
       description: Unprocessable Entity
+# -------------------------------------------------------- #
     Created:
       description: Created
       headers:
@@ -1512,62 +1534,69 @@ components:
               schema:
                 type: string
                 format: uri
-                example: /artifacts/10
+                example: https://exampleapi.com/api/v1/some-endpoint/:resource
+# -------------------------------------------------------- #
+    CreatedNoHeader:
+      description: Created
+# -------------------------------------------------------- #
     BadRequest:
       description: Bad Request
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Status"        
+            $ref: "#/components/schemas/Status"
+# -------------------------------------------------------- #
     Forbidden:
       description: Forbidden
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Status"
-# -------------------------------------------------------- #        
+# -------------------------------------------------------- #
     SalesOrder:
       description: Success
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/SalesOrder"
-# -------------------------------------------------------- #        
+# -------------------------------------------------------- #
     SalesOrders:
       description: Success
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/SalesOrders"
- # -------------------------------------------------------- #   
-    LastOrder:
-      description: Success
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/SalesOrder"
-# -------------------------------------------------------- #    
+# -------------------------------------------------------- #
     Contact:
       description: Success
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Contact"
-# -------------------------------------------------------- #    
+# -------------------------------------------------------- #
     Contacts:
       description: Success
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Contacts"
-# -------------------------------------------------------- #    
+# -------------------------------------------------------- #
     Customer:
       description: Success
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Customer"
-# -------------------------------------------------------- #      
+# -------------------------------------------------------- #
+    CustomerInclude:
+      description: Success
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/Customer"
+              - $ref: "#/components/schemas/CustomerInclude"
+# -------------------------------------------------------- #
     CustomerPersonalDetailsResponse:
       description: Success
       content:
@@ -1583,11 +1612,11 @@ components:
                 type: number
                 description: Expiration time (Unix epoch)
                 example: 1602944485
-# -------------------------------------------------------- # 
+# -------------------------------------------------------- #
 # SECURITY
-# -------------------------------------------------------- #    
+# -------------------------------------------------------- #
   securitySchemes:
-    OAuth2:           
+    OAuth2:
       type: oauth2
       flows:
         authorizationCode:
@@ -1606,55 +1635,19 @@ components:
         clientCredentials:
           tokenUrl: https://identity.example.com/connect/token
           scopes:
-            codasapi.sales_order.read: Grants read access to sales orders, only their own by default
+            codasapi.sales_order.read: Grants read access to sales orders
             #------#
-            codasapi.contact.read: Grants read access to customer further contacts, only their own by default
+            codasapi.contact.read: Grants read access to customer further contacts
+            codasapi.contact.update: Grants update access to customer further contacts
             #------#
             codasapi.customer.read: Grants read access to customers
             codasapi.customer.update: Grants update access to customers
             #------#
             codasapi.sales_payment.create: Grants creation access for sales payments
-# -------------------------------------------------------- #    
+# -------------------------------------------------------- #
 # REQUEST BODIES
-# -------------------------------------------------------- #    
-  requestBodies:  
-    ContactBody:
-      description: An object containing Contact update details 
-      required: true
-      content:
-        application/json-patch+json:
-          schema:
-            $ref: "#/components/schemas/Contact"
-          examples:
-            default:
-              summary: Example 1
-              value: |
-                {
-                  "Name": {
-                    "casTitle": "Mr",
-                    "casForename": "Joe",
-                    "casInitials": "T",
-                    "casSurname": "Bloggs"
-                  },
-                  "Address": {
-                    "casAddress4": "Lancashire",
-                  },
-                  "Marketing": {
-                    "casGDPRMailUs": "D",
-                  },
-                  "casEMail": "joe@bloggs.com",
-                  "casMobileNo": "07775123456",
-                  }
-                }
-# -------------------------------------------------------- #   
-    SalesOrderBody:
-      description: Success
-      required: true
-      content:
-        application/json-patch+json:
-          schema:
-            $ref: "#/components/schemas/SalesOrder"
-# -------------------------------------------------------- #   
+# -------------------------------------------------------- #
+  requestBodies:
     ThirdPartySalesOrder:
       description: Success
       required: true
@@ -1662,7 +1655,7 @@ components:
         application/json-patch+json:
           schema:
             $ref: "#/components/schemas/ThirdPartySalesOrder"
-# -------------------------------------------------------- #   
+# -------------------------------------------------------- #
     Customer:
       description: An object containing customer details
       content:
@@ -1676,21 +1669,21 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ThirdPartyCustomer"
-# -------------------------------------------------------- #   
+# -------------------------------------------------------- #
     CustomerPost:
       description: An object containing customer details
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Customer"
-# -------------------------------------------------------- #   
+# -------------------------------------------------------- #
     CustomerPatchBody:
       description: An object containing customer update details
       required: true
       content:
         application/json-patch+json:
           schema:
-            $ref: "#/components/schemas/PatchDocument"
+            $ref: "#/components/schemas/Patch"
           examples:
             default:
               summary: Example 1
@@ -1700,13 +1693,32 @@ components:
                   { "op": "replace", "path": "/PrefCommInv", "value": "POST" },
                   { "op": "replace", "path": "/PrefCommStmt", "value": "EMAIL,POST" }
                 ]
+    ContactPatchBody:
+      description: An object containing customer contact update details
+      required: true
+      content:
+        application/json-patch+json:
+          schema:
+            $ref: "#/components/schemas/Patch"
+          examples:
+            default:
+              summary: Example 1
+              value: |
+                [
+                  { "op": "replace", "path": "/EMail", "value": "john.doe@example.com" },
+                  { "op": "replace", "path": "/TelNo", "value": "01615550123" },
+                  { "op": "replace", "path": "/MobileNo", "value": "07555012345" },
+                  { "op": "replace", "path": "/PrefTel", "value": "M" }
+                ]
     CustomerPersonalDetailsBody:
       description: An object containing the customer personal details
       required: true
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/CustomerPersonalDetails"
+            oneOf:
+              - $ref: "#/components/schemas/CustomerPersonalDetails"
+              - $ref: "#/components/schemas/CustomerPersonalDetailsIVR"
 # -------------------------------------------------------- #
     SalesPaymentRestrictedBody:
       description: An object containing a sales payment
@@ -1715,31 +1727,27 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/SalesPaymentRestricted"
-# -------------------------------------------------------- #   
+# -------------------------------------------------------- #
     OrderPatchBody:
       description: An object containing customer update details
       required: true
       content:
         application/json-patch+json:
           schema:
-            $ref: "#/components/schemas/PatchDocument"
+            $ref: "#/components/schemas/Patch"
           examples:
             default:
               summary: Example 1
               value: |
                 [
-                  { "op": "replace", "path": "/AddressLine1", "value": "Line 1" },
-                  { "op": "replace", "path": "/AddressLine2", "value": "Line 2" },
-                  { "op": "replace", "path": "/AddressLine3", "value": "Line 3" },
-                  { "op": "replace", "path": "/AddressLine4", "value": "Line 4" },
-                  { "op": "replace", "path": "/AddressPostcode", "value": "M5 3EJ" },
                   { "op": "replace", "path": "/DeliveryInstructions", "value": "New Instructions" },
                   { "op": "replace", "path": "/SpecialDeliveryInstructionsLine1", "value": "Line 1" },
                   { "op": "replace", "path": "/SpecialDeliveryInstructionsLine2", "value": "Line 2" },
                   { "op": "replace", "path": "/SpecialDeliveryInstructionsLine3", "value": "Line 3" },
                   { "op": "replace", "path": "/SpecialDeliveryInstructionsLine4", "value": "Line 4" },
+                  { "op": "replace", "path": "/DayTimeWindow", "value": [{"Day": "Wednesday", "TimeWindow": [{"From": "07:45", "To": "10:00"}, {"From": "12:45", "To": "13:00"}]}]},
                   { "op": "replace", "path": "/CustomerOrderNumber", "value": "1234" },
-                  { "op": "replace", "path": "/MaximumVehicleType", "value": "0" },
+                  { "op": "replace", "path": "/SpecificVehicleType", "value": "0" },
                   { "op": "replace", "path": "/IntendedDeliveryDate", "value": "2021-04-08" },
                   { "op": "replace", "path": "/LatestDeliveryDate", "value": "2021-04-12" },
                   { "op": "replace", "path": "/OrderDepot", "value": "100" }
@@ -1748,12 +1756,14 @@ components:
               summary: Example 2
               value: |
                 [
-                  { "op": "replace", "path": "/OrderLine/0", "value": { "Quantity": "1000" },
-                  { "op": "add", "path": "/DayTimeWindow/0", "value": { "Day": "Monday", "TimeWindow": [{ "From": "9:00", "To": "12:00" }] }},
+                  { "op": "replace", "path": "/OrderLine/0/Quantity", "value": 1000 },
+                  { "op": "replace", "path": "/OrderLine/0/VATRate", "value": "5.00" }
                 ]
-            remove:
-              summary: Example 3
-              value: |
-                [
-                  { "op": "remove", "path": "/DayTimeWindow/0" }
-                ]
+# -------------------------------------------------------- #
+    SalesOrderPaymentBody:
+      description: An object containing a sales order payment
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ThirdPartyOrderPayment"
