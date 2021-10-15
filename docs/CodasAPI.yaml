@@ -18,12 +18,6 @@ info:
 # API SERVERS
 # -------------------------------------------------------- #
 servers: 
-# Added by API Auto Mocking Plugin
-# Added by API Auto Mocking Plugin
-- description: SwaggerHub API Auto Mocking
-  url: https://virtserver.swaggerhub.com/codas7/CODAS7_PublicAPI/1
-- description: SwaggerHub API Auto Mocking
-  url: https://virtserver.swaggerhub.com/codas7/Codas7a/1
 - url: https://sandbox.dev.codas.com/api/v1
   description: Sandbox API Server
 # -------------------------------------------------------- #
@@ -249,6 +243,26 @@ paths:
       security:
         - OAuth2:
             - codasapi.customer.authenticate
+  /customers/telephone-lookup:
+    post:
+      tags:
+      - Customers
+      operationId: CustomerTelephoneLookup
+      description: Lookup a telephone number and return the found customers
+      requestBody:
+        $ref: "#/components/requestBodies/CustomerTelephoneLookupBody"
+      responses:
+        "200":
+          $ref: "#/components/responses/CustomerRestrictedResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: Unauthorised
+        "403":
+          $ref: "#/components/responses/Forbidden"
+      security:
+        - OAuth2:
+            - codasapi.customer.telephone_lookup
 # -------------------------------------------------------- #
 # CONTACT ENDPOINTS
 # -------------------------------------------------------- #
@@ -1218,6 +1232,111 @@ components:
           description: RDCO number
           example: '90909090'
 # -------------------------------------------------------- #
+    CustomerRestrictedList:
+      title: Customer (Restricted) List
+      type: object
+      description: List of customers with no identifing information
+      properties:
+        Items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CustomerRestricted"
+        Next:
+          $ref: "#/components/schemas/Next"
+          description: Link to next batch of customers
+# -------------------------------------------------------- #
+    CustomerRestricted:
+      title: Customer (Restricted)
+      type: object
+      description: Customer with no identifing information
+      properties:
+        Id:
+          type: number
+          description: Identifier for customer telephone map
+          example: 156
+        MarketCode:
+          type: string
+          description: Market code
+          example: 'DOM'
+          maxLength: 3
+        AccManager:
+          type: string
+          description: Account Manager
+          maxLength: 3
+          example: '001'
+        CorpManager:
+          type: string
+          description: Corporate Manager
+          maxLength: 3
+          example: '001'
+        LoyaltyCode:
+          type: string
+          description: Loyalty Code
+          maxLength: 10
+          example: 'A1'
+        ColdWeatherPriority:
+          type: boolean
+          description: Cold Weather Priority
+        AccountType:
+          type: string
+          maxLength: 1
+          example: '0'
+        Balance:
+          type: number
+          description: Total outstanding balance (pence)
+          example: 100000
+        Brand:
+          type: string
+          maxLength: 1
+          example: '1'
+        Company:
+          type: string
+          maxLength: 1
+          example: '1'
+        CreditLimit:
+          type: number
+          description: Credit limit
+          example: 100000
+        Depot:
+          type: string
+          description: Depot code
+          example: '123'
+          maxLength: 3
+        SalesRep:
+          type: string
+          description: Sales rep
+          example: '001'
+          maxLength: 3
+        IsParent:
+          type: boolean
+          description: Is a parent customer
+        OutstandingOrder:
+          type: boolean
+          description: Customer has an outstanding order
+        OrderStatus:
+          type: integer
+          description: Status
+          example: 10
+        OrderDeliveryDepot:
+          type: string
+          description: Delivery Depot
+          example: '100'
+          maxLength: 3
+        OrderIntendedDeliveryDate:
+          type: string
+          description: Earliest delivery date
+          example: 'YYYY-MM-DD'
+          maxLength: 10
+          format: date
+          nullable: true
+        OrderLoadDate:
+          type: string
+          description: Load Date
+          example: 'YYYY-MM-DD'
+          maxLength: 10
+          format: date
+          nullable: true
+# -------------------------------------------------------- #
     CustomerInclude:
       title: Customer Include - (Optional)
       type: object
@@ -1444,6 +1563,14 @@ components:
           example: 'T729861'
           maxLength: 20
 # -------------------------------------------------------- #
+    CustomerTelephoneLookup:
+      type: object
+      properties:
+        PhoneNumber:
+          description: Phone Number to lookup
+          type: string
+          example: '07123456789'
+# -------------------------------------------------------- #
     Patch:
       type: array
       items:
@@ -1613,6 +1740,14 @@ components:
                 description: Expiration time (Unix epoch)
                 example: 1602944485
 # -------------------------------------------------------- #
+    CustomerRestrictedResponse:
+      description: Success
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CustomerRestrictedList"
+              
+# -------------------------------------------------------- #
 # SECURITY
 # -------------------------------------------------------- #
   securitySchemes:
@@ -1642,6 +1777,7 @@ components:
             #------#
             codasapi.customer.read: Grants read access to customers
             codasapi.customer.update: Grants update access to customers
+            codasapi.customer.telephone_lookup: Grants access to lookup customers based on telephone number
             #------#
             codasapi.sales_payment.create: Grants creation access for sales payments
 # -------------------------------------------------------- #
@@ -1719,6 +1855,13 @@ components:
             oneOf:
               - $ref: "#/components/schemas/CustomerPersonalDetails"
               - $ref: "#/components/schemas/CustomerPersonalDetailsIVR"
+    CustomerTelephoneLookupBody:
+      description: An object containing a telephone number to lookup a customer
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CustomerTelephoneLookup"
 # -------------------------------------------------------- #
     SalesPaymentRestrictedBody:
       description: An object containing a sales payment
